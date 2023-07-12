@@ -32,4 +32,4 @@ const constants = {
   DEFAULT_ICON_SIZE: "16x16",
 };
 
-export default constants;
+module.exports = constants;
