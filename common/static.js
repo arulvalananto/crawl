@@ -1,4 +1,4 @@
-export const wordsToRemove = [
+exports.wordsToRemove = [
   "about",
   "above",
   "across",
