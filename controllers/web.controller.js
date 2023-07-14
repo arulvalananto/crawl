@@ -25,6 +25,10 @@ class WebContoller {
             res.status(400).json({ message: error.message });
         }
     }
+
+    static async extractWebTools(req, res) {
+        
+    }
 }
 
 module.exports = WebContoller;
