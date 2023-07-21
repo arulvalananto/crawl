@@ -4,7 +4,7 @@ The Crawler Man offers a comprehensive collection of pre-defined APIs explicitly
 
 ## Setup instructions
 
-*  Install Dependencies
+* Install Dependencies
 
 ```bash
 npm install

@@ -1,14 +1,14 @@
 const cheerio = require('cheerio');
 
-const constants = require('./constants');
-const { estimateReadingTime, extractKeywords } = require('./helpers');
+const constants = require('../constants');
+const { estimateReadingTime, extractKeywords } = require('../helpers');
 
 /**
  * Extract webpage data
  */
-class ExtractWeb {
+class Web {
     /**
-     * Constructor function for ExtractWeb
+     * Constructor function for Web
      * @param {string} url
      * @param {string} html
      */
@@ -187,19 +187,19 @@ class ExtractWeb {
      */
     getData() {
         return {
-            url: this.getUrl(),
-            type: this.getType(),
-            logo: this.getLogo(),
             title: this.getTitle(),
-            author: this.getAuthor(),
-            iconSet: this.getIcons(),
-            siteName: this.getSiteName(),
-            thumbnail: this.getThumbnail(),
             description: this.getDescription(),
+            siteName: this.getSiteName(),
+            url: this.getUrl(),
             keywords: this.getKeywords(),
+            type: this.getType(),
+            author: this.getAuthor(),
+            thumbnail: this.getThumbnail(),
+            logo: this.getLogo(),
             readingTime: this.getReadingTime(),
+            iconSet: this.getIcons(),
         };
     }
 }
 
-module.exports = ExtractWeb;
+module.exports = Web;
