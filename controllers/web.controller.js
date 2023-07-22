@@ -25,7 +25,8 @@ class WebContoller {
 
             res.status(200).json(extractWeb.getData());
         } catch (error) {
-            res.status(400).json({ message: error.message });
+            const status = error.statusCode ?? 400;
+            res.status(status).json({ message: error.message });
         }
     }
 
@@ -69,7 +70,6 @@ class WebContoller {
         } catch (error) {
             res.status(400).json({
                 message: error.message,
-                stack: error.stack,
             });
         }
     }
