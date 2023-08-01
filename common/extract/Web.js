@@ -41,7 +41,11 @@ class Web {
      * @return {string} title
      */
     getTitle() {
-        return this.$(constants.TITLE).text() || constants.UNTITLED;
+        return (
+            this.$(constants.TITLE).html() ||
+            this.$(constants.TITLE).text() ||
+            constants.UNTITLED
+        );
     }
 
     /**
