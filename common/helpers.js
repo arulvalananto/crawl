@@ -1,3 +1,6 @@
+const axios = require('axios');
+const imageSize = require('image-size');
+
 const { wordsToRemove } = require('./static');
 
 exports.extractKeywords = (text, limit = 25) => {
@@ -28,4 +31,23 @@ exports.estimateReadingTime = (content, wordPerMinute = 150) => {
 
     const readingTime = Math.ceil(wordCount / wordPerMinute);
     return readingTime;
+};
+
+exports.getImageDimensions = async (imageUrl) => {
+    try {
+        const response = await axios.get(imageUrl, {
+            responseType: 'arraybuffer',
+        });
+
+        const imageBuffer = Buffer.from(response.data);
+        const dimensions = imageSize(imageBuffer);
+
+        return {
+            width: dimensions.width,
+            height: dimensions.height,
+        };
+    } catch (error) {
+        console.error(`Error loading image ${imageUrl}: ${error.message}`);
+        return null;
+    }
 };

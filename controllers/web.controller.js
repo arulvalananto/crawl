@@ -1,5 +1,3 @@
-const axios = require('axios');
-
 const ExtractWeb = require('../common/extract/Web');
 const { getUrlData } = require('../common/axios');
 const Links = require('../common/extract/Links');
@@ -30,8 +28,18 @@ class WebContoller {
         }
     }
 
+    /**
+     * Extract the tools that are used in the given website/webpage/webapp
+     * @param {Request} req
+     * @param {Response} res
+     */
     static async extractWebTools(req, res) {}
 
+    /**
+     * Gather all links in the given website/webpage/webapp
+     * @param {Request} req
+     * @param {Response} res
+     */
     static async gatherAllLinks(req, res) {
         try {
             const { url } = req.body;
@@ -52,6 +60,11 @@ class WebContoller {
         }
     }
 
+    /**
+     * Gather all the images in the specified website/webpage/webapp
+     * @param {Request} req
+     * @param {Response} res
+     */
     static async gatherAllImages(req, res) {
         try {
             const { url } = req.body;
@@ -64,7 +77,7 @@ class WebContoller {
             const html = response.data;
 
             const image = new Images(url, html);
-            const images = image.getAllImages();
+            const images = await image.getAllImages();
 
             res.status(200).json({ images });
         } catch (error) {
