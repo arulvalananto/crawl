@@ -1,5 +1,7 @@
 const cheerio = require('cheerio');
 
+const { getImageDimensions } = require('../helpers');
+
 class Images {
     /**
      * Constructor function for Web
@@ -11,19 +13,19 @@ class Images {
         this.$ = cheerio.load(html);
     }
 
-    getAllImages() {
+    async getAllImages() {
         const images = [];
-        this.$('img').each((index, element) => {
+        const imageElements = this.$('img');
+
+        for (const element of imageElements) {
             const src = this.$(element).attr('src');
             const alt = this.$(element).attr('alt');
 
             if (src && src.startsWith('https')) {
-                console.log('inside');
-                images.push({ src, alt });
+                const dimensions = await getImageDimensions(src);
+                images.push({ src, alt, ...dimensions });
             }
-            // console.log(src.startsWith('http'));
-            console.log(src);
-        });
+        }
 
         return images;
     }

@@ -1,16 +1,12 @@
 const axios = require('axios');
-const { response } = require('express');
 
-exports.getUrlData = async (url) => {
+const APIRequest = (callback) => {
     return new Promise((resolve, reject) => {
-        return axios
-            .get(url, {
-                headers: { 'Accept-Encoding': 'gzip' },
-            })
+        return callback
             .then((response) => resolve(response))
             .catch((error) => {
                 if (error instanceof axios.AxiosError) {
-                    if (error.response.status === 403) {
+                    if (error.response && error.response.status === 403) {
                         reject({ message: 'Forbidden', statusCode: 403 });
                     }
                 } else {
@@ -19,3 +15,29 @@ exports.getUrlData = async (url) => {
             });
     });
 };
+
+exports.getUrlData = (url) => {
+    return new Promise((resolve, reject) => {
+        return axios
+            .get(url, {
+                headers: { 'Accept-Encoding': 'gzip' },
+            })
+            .then((response) => resolve(response))
+            .catch((error) => {
+                if (
+                    error instanceof axios.AxiosError &&
+                    error.response &&
+                    error.response.status === 403
+                ) {
+                    reject({ message: 'Forbidden', statusCode: 403 });
+                } else reject(error);
+            });
+    });
+};
+
+exports.getUrlData = async (url) =>
+    await APIRequest(
+        axios.get(url, {
+            headers: { 'Accept-Encoding': 'gzip' },
+        })
+    );
