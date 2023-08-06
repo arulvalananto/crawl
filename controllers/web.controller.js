@@ -1,7 +1,10 @@
-const ExtractWeb = require('../common/extract/Web');
-const { getUrlData } = require('../common/axios');
-const Links = require('../common/extract/Links');
-const Images = require('../common/extract/Images');
+const puppeteer = require('puppeteer');
+
+const ExtractWeb = require('../common/Web');
+const helpers = require('../common/helpers');
+const AxiosInstance = require('../common/axios');
+const Medium = require('../common/Blogs/Medium');
+const constants = require('../common/constants');
 
 /**
  * controller function for website/webpage extraction
@@ -16,7 +19,7 @@ class WebContoller {
         try {
             const { url } = req.body;
 
-            const response = await getUrlData(url);
+            const response = await AxiosInstance.getUrlData(url);
             const html = response.data;
 
             const extractWeb = new ExtractWeb(url, html);
@@ -48,13 +51,30 @@ class WebContoller {
                 return res.status(400).json({ message: 'Invalid URL' });
             }
 
-            const response = await getUrlData(url);
-            const html = response.data;
+            const browser = await puppeteer.launch({ headless: 'new' });
+            const page = await browser.newPage();
 
-            const link = new Links(url, html);
-            const links = link.getAllLinks();
+            // Disable image loading
+            await page.setRequestInterception(true);
+            page.on('request', (request) => {
+                if (request.resourceType() === 'image') request.abort();
+                else request.continue();
+            });
 
-            res.status(200).json({ links });
+            await page.goto(url);
+            new Promise((r) => setTimeout(r, 2000));
+            const allLinks = await page.$$eval('a', (links) =>
+                links.map((link) => {
+                    return { href: link.href, title: link.innerText };
+                })
+            );
+            await browser.close();
+
+            const links = helpers.categorizeLinks(
+                helpers.removeDuplicateLinks(allLinks),
+                url
+            );
+            res.status(200).json({ total: links.length, links });
         } catch (error) {
             res.status(400).json({ message: error.message });
         }
@@ -68,18 +88,50 @@ class WebContoller {
     static async gatherAllImages(req, res) {
         try {
             const { url } = req.body;
-
             if (!url) {
                 return res.status(400).json({ message: 'Invalid URL' });
             }
 
-            const response = await getUrlData(url);
-            const html = response.data;
+            const browser = await puppeteer.launch({ headless: 'new' });
+            const page = await browser.newPage();
 
-            const image = new Images(url, html);
-            const images = await image.getAllImages();
+            await page.goto(url);
+            new Promise((r) => setTimeout(r, 2000));
+            const imageUrls = await page.$$eval('img', (images) =>
+                images.map((img) => ({ src: img.src, alt: img.alt }))
+            );
+            await browser.close();
 
-            res.status(200).json({ images });
+            const images = [];
+            for (let image of imageUrls) {
+                if (image.src && image.src.startsWith('https')) {
+                    const dimensions = await helpers.getImageDimensions(
+                        image.src
+                    );
+                    images.push({
+                        ...image,
+                        ...dimensions,
+                    });
+                }
+            }
+
+            res.status(200).json({ total: images.length, images });
+        } catch (error) {
+            res.status(400).json({
+                message: error.message,
+            });
+        }
+    }
+
+    static async gatherTrendingArticles(req, res) {
+        try {
+            const { articleCount } = req.params;
+
+            const medium = new Medium(constants.MEDIUM_BASE_URL);
+
+            const articles = await medium.getTrendingArticles(articleCount);
+
+            res.status(200).json({ articles });
         } catch (error) {
             res.status(400).json({
                 message: error.message,

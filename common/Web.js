@@ -1,7 +1,7 @@
 const cheerio = require('cheerio');
 
-const constants = require('../constants');
-const { estimateReadingTime, extractKeywords } = require('../helpers');
+const constants = require('./constants');
+const { wordsToRemove } = require('./static');
 
 /**
  * Extract webpage data
@@ -15,6 +15,49 @@ class Web {
     constructor(url, html) {
         this.url = url;
         this.$ = cheerio.load(html);
+    }
+
+    /**
+     * Extract keywords from content
+     * @param {*} text
+     * @param {*} limit
+     * @returns
+     */
+    extractKeywords(text, limit = 25) {
+        const words = text.split(/\s+/);
+
+        const frequencyMap = {};
+        for (const word of words) {
+            const cleanedWord = word.toLowerCase().replace(/[^\w\s]/gi, '');
+            if (cleanedWord) {
+                frequencyMap[cleanedWord] =
+                    (frequencyMap[cleanedWord] || 0) + 1;
+            }
+        }
+
+        const sortedWords = Object.keys(frequencyMap).sort(
+            (a, b) => frequencyMap[b] - frequencyMap[a]
+        );
+
+        const filteredWords = sortedWords.filter(
+            (word) => !wordsToRemove.includes(word)
+        );
+
+        const numKeywords = limit;
+        return filteredWords.slice(0, numKeywords);
+    }
+
+    /**
+     * Estimate the reading time of the content if the website/webpage is article.
+     * @param {*} content
+     * @param {*} wordPerMinute
+     * @returns
+     */
+    estimateReadingTime(content, wordPerMinute = 150) {
+        const wordCount = content.trim().split(/\s+/).length;
+
+        const readingTime = Math.ceil(wordCount / wordPerMinute);
+        return readingTime;
     }
 
     /**
@@ -103,7 +146,7 @@ class Web {
 
             const textContent = this.$(constants.HEADER_SELECTOR).text();
             const combineContent = `${title} ${description} ${textContent}`;
-            return extractKeywords(combineContent);
+            return this.extractKeywords(combineContent);
         }
     }
 
@@ -179,7 +222,7 @@ class Web {
         if (type === constants.ARTICLE) {
             const content = this.$(constants.HEADER_WITH_PARAGRAPH).text();
 
-            const readingTime = estimateReadingTime(content);
+            const readingTime = this.estimateReadingTime(content);
             return readingTime;
         }
         return undefined;

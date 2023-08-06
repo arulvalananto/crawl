@@ -1,38 +1,6 @@
 const axios = require('axios');
 const imageSize = require('image-size');
 
-const { wordsToRemove } = require('./static');
-
-exports.extractKeywords = (text, limit = 25) => {
-    const words = text.split(/\s+/);
-
-    const frequencyMap = {};
-    for (const word of words) {
-        const cleanedWord = word.toLowerCase().replace(/[^\w\s]/gi, '');
-        if (cleanedWord) {
-            frequencyMap[cleanedWord] = (frequencyMap[cleanedWord] || 0) + 1;
-        }
-    }
-
-    const sortedWords = Object.keys(frequencyMap).sort(
-        (a, b) => frequencyMap[b] - frequencyMap[a]
-    );
-
-    const filteredWords = sortedWords.filter(
-        (word) => !wordsToRemove.includes(word)
-    );
-
-    const numKeywords = limit;
-    return filteredWords.slice(0, numKeywords);
-};
-
-exports.estimateReadingTime = (content, wordPerMinute = 150) => {
-    const wordCount = content.trim().split(/\s+/).length;
-
-    const readingTime = Math.ceil(wordCount / wordPerMinute);
-    return readingTime;
-};
-
 exports.getImageDimensions = async (imageUrl) => {
     try {
         const response = await axios.get(imageUrl, {
@@ -50,4 +18,45 @@ exports.getImageDimensions = async (imageUrl) => {
         console.error(`Error loading image ${imageUrl}: ${error.message}`);
         return null;
     }
+};
+
+exports.removeDuplicateLinks = (links) => {
+    const uniqueLinks = new Set();
+    const linksDictionary = {};
+
+    for (let i = 0; i < links.length; i++) {
+        const { href } = links[i];
+        if (!linksDictionary.hasOwnProperty(href)) {
+            linksDictionary[href] = href;
+            uniqueLinks.add(links[i]);
+        }
+    }
+
+    return [...uniqueLinks];
+};
+
+exports.categorizeLinks = (links, baseUrl) => {
+    return links.map((link) => {
+        const url = new URL(link.href);
+        const isExternal =
+            url.hostname === new URL(baseUrl).hostname ? false : true;
+
+        return { ...link, isExternal };
+    });
+};
+
+exports.APIRequest = (callback) => {
+    return new Promise((resolve, reject) => {
+        return callback
+            .then((response) => resolve(response))
+            .catch((error) => {
+                if (error instanceof axios.AxiosError) {
+                    if (error.response && error.response.status === 403) {
+                        reject({ message: 'Forbidden', statusCode: 403 });
+                    }
+                } else {
+                    reject(error);
+                }
+            });
+    });
 };
