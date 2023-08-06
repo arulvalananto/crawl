@@ -3,6 +3,8 @@ const puppeteer = require('puppeteer');
 const ExtractWeb = require('../common/Web');
 const helpers = require('../common/helpers');
 const AxiosInstance = require('../common/axios');
+const Medium = require('../common/Blogs/Medium');
+const constants = require('../common/constants');
 
 /**
  * controller function for website/webpage extraction
@@ -114,6 +116,22 @@ class WebContoller {
             }
 
             res.status(200).json({ total: images.length, images });
+        } catch (error) {
+            res.status(400).json({
+                message: error.message,
+            });
+        }
+    }
+
+    static async gatherTrendingArticles(req, res) {
+        try {
+            const { articleCount } = req.params;
+
+            const medium = new Medium(constants.MEDIUM_BASE_URL);
+
+            const articles = await medium.getTrendingArticles(articleCount);
+
+            res.status(200).json({ articles });
         } catch (error) {
             res.status(400).json({
                 message: error.message,
