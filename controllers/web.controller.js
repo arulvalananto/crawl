@@ -131,7 +131,7 @@ class WebContoller {
 
             const articles = await medium.getTrendingArticles(articleCount);
 
-            res.status(200).json({ articles });
+            res.status(200).json({ total: articles.length, articles });
         } catch (error) {
             res.status(400).json({
                 message: error.message,
