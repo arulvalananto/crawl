@@ -9,7 +9,7 @@ class Medium {
 
     async getTrendingArticles(
         count,
-        options = { headless: false, devtools: false, url: '', additional: 4 }
+        options = { headless: 'new', devtools: false, url: '', additional: 4 }
     ) {
         const browser = await puppeteer.launch({
             headless: options.headless,
@@ -142,10 +142,11 @@ class Medium {
                 articles.push({
                     title,
                     link,
-                    creatorName,
+                    author: creatorName,
                     readingTime,
-                    date,
+                    publicationDate: date,
                     thumbnail: thumbnail ? thumbnail : '',
+                    source: 'Medium',
                 });
             }
         }

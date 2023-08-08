@@ -5,6 +5,7 @@ const helpers = require('../common/helpers');
 const AxiosInstance = require('../common/axios');
 const Medium = require('../common/Blogs/Medium');
 const constants = require('../common/constants');
+const Hackernoon = require('../common/Blogs/Hackernoon');
 
 /**
  * controller function for website/webpage extraction
@@ -126,10 +127,17 @@ class WebContoller {
     static async gatherTrendingArticles(req, res) {
         try {
             const { articleCount } = req.params;
+            const articles = [];
 
-            const medium = new Medium(constants.MEDIUM_BASE_URL);
+            // const medium = new Medium(constants.MEDIUM_BASE_URL);
+            // const mediumArticles = await medium.getTrendingArticles(articleCount);
+            // articles.push(...mediumArticles);
 
-            const articles = await medium.getTrendingArticles(articleCount);
+            const hackernoon = new Hackernoon(constants.HACKERNOON_BASE_URL);
+            const hackernoonArticles = await hackernoon.getTrendingArticles(
+                articleCount
+            );
+            articles.push(...hackernoonArticles);
 
             res.status(200).json({ total: articles.length, articles });
         } catch (error) {
