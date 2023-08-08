@@ -31,6 +31,7 @@ const constants = {
     MASK_ICON_SELECTOR: 'link[rel="mask-icon"]',
     DEFAULT_ICON_SIZE: '16x16',
     MEDIUM_BASE_URL: 'https://medium.com/',
+    HACKERNOON_BASE_URL: 'https://hackernoon.com/techbeat?filter=trending',
 };
 
 module.exports = constants;
