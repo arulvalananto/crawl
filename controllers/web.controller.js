@@ -129,15 +129,15 @@ class WebContoller {
             const { articleCount } = req.params;
             const articles = [];
 
-            // const medium = new Medium(constants.MEDIUM_BASE_URL);
-            // const mediumArticles = await medium.getTrendingArticles(articleCount);
-            // articles.push(...mediumArticles);
-
+            const medium = new Medium(constants.MEDIUM_BASE_URL);
             const hackernoon = new Hackernoon(constants.HACKERNOON_BASE_URL);
-            const hackernoonArticles = await hackernoon.getTrendingArticles(
-                articleCount
-            );
-            articles.push(...hackernoonArticles);
+
+            const [mediumArticles, hackernoonArticles] = await Promise.all([
+                medium.getTrendingArticles(articleCount),
+                hackernoon.getTrendingArticles(articleCount),
+            ]);
+
+            articles.push(...mediumArticles, ...hackernoonArticles);
 
             res.status(200).json({ total: articles.length, articles });
         } catch (error) {

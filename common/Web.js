@@ -217,15 +217,33 @@ class Web {
      * Measure reading time for the website if it is an article.
      * @return {number} reading_time
      */
-    getReadingTime() {
+    getReadingTime(isArticle = false) {
+        // hackernoon
+        const scriptContent = this.$('script#__NEXT_DATA__').html();
+        if (scriptContent) {
+            const scriptData = JSON.parse(scriptContent);
+            const estimatedTime = scriptData.props.pageProps.data.estimatedTime;
+            return estimatedTime;
+        }
+
         const type = this.meta(constants.OG_TYPE);
-        if (type === constants.ARTICLE) {
+        if (type === constants.ARTICLE || isArticle) {
             const content = this.$(constants.HEADER_WITH_PARAGRAPH).text();
 
             const readingTime = this.estimateReadingTime(content);
             return readingTime;
         }
         return undefined;
+    }
+
+    getPublicationDate() {
+        const scriptContent = this.$('script#__NEXT_DATA__').html();
+        if (scriptContent) {
+            const scriptData = JSON.parse(scriptContent);
+            const publicationDate = scriptData.props.pageProps.data.publishedAt;
+            return publicationDate * 1000;
+        }
+        return new Date();
     }
 
     /**
