@@ -1,4 +1,8 @@
 const puppeteer = require('puppeteer');
+const cheerio = require('cheerio');
+
+const Web = require('../Web');
+const AxiosInstance = require('../axios');
 
 class Hackernoon {
     constructor(url) {
@@ -7,7 +11,7 @@ class Hackernoon {
 
     async getTrendingArticles(
         count,
-        options = { headless: false, devtools: false, url: '', additional: 14 }
+        options = { headless: 'new', devtools: false, url: '', additional: 14 }
     ) {
         const browser = await puppeteer.launch({
             headless: options.headless,
@@ -63,20 +67,33 @@ class Hackernoon {
                 thumbnailElement ? thumbnailElement[0] : null
             );
 
-            if (title && link && creatorName) {
+            let readingTime = '';
+            let publicationDate = '';
+            if (link) {
+                const response = await AxiosInstance.getUrlData(link);
+                const html = response.data;
+
+                const extractWeb = new Web(link, html);
+                publicationDate = extractWeb.getPublicationDate();
+
+                const time = extractWeb.getReadingTime(true);
+                readingTime = time ? `${time} min Read` : '1 min Read';
+            }
+
+            if (title && link && creatorName && readingTime) {
                 articles.push({
                     title,
                     link,
                     author: creatorName,
-                    // readingTime,
-                    // publicationDate: date,
+                    readingTime,
+                    publicationDate: new Date(publicationDate),
                     thumbnail: thumbnail ? thumbnail : '',
                     source: 'Hackernoon',
                 });
             }
         }
 
-        // await browser.close();
+        await browser.close();
 
         return articles;
     }

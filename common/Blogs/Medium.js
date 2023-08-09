@@ -82,10 +82,13 @@ class Medium {
             articles.push({
                 title,
                 link,
-                creatorName,
+                author: creatorName,
                 readingTime,
-                date,
+                publicationDate: new Date(
+                    `${date}, ${new Date().getFullYear()}`
+                ),
                 thumbnail,
+                source: 'Medium',
             });
         }
 
@@ -144,7 +147,9 @@ class Medium {
                     link,
                     author: creatorName,
                     readingTime,
-                    publicationDate: date,
+                    publicationDate: new Date(
+                        `${date}, ${new Date().getFullYear()}`
+                    ),
                     thumbnail: thumbnail ? thumbnail : '',
                     source: 'Medium',
                 });
