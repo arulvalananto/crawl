@@ -243,6 +243,10 @@ class Web {
             const publicationDate = scriptData.props.pageProps.data.publishedAt;
             return publicationDate * 1000;
         }
+
+        const lastUpdatedDate = this.meta('last-updated');
+        if (lastUpdatedDate) return lastUpdatedDate;
+
         return new Date();
     }
 

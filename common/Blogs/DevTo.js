@@ -1,9 +1,11 @@
+const puppeteer = require('puppeteer');
+
 const Web = require('../Web');
 const AxiosInstance = require('../axios');
 const constants = require('../constants');
 const { initializeBrowser } = require('../browserInstance');
 
-class Hackernoon {
+class DevTo {
     constructor(url) {
         this.url = url;
     }
@@ -26,18 +28,16 @@ class Hackernoon {
 
         const articles = [];
 
-        for (let i = 1; i <= count + options.additional; i++) {
-            const path = `/html/body/div[1]/div/main/section/div/div[2]/div[${i}]/div`;
+        for (let i = 2; i <= count + options.additional; i++) {
+            const path = `/html/body/div[7]/div/div[2]/main/div[3]/div[${i}]`;
 
-            const titleElementXPath = `${path}/div[2]/h3/a`;
-            const linkElementXPath = `${path}/div[2]/h3/a`;
-            const creatorNameElementXPath = `${path}/div[2]/div/a/span`;
-            const thumbnailElementXPath = `${path}/div[3]`;
-
-            await page.waitForXPath(titleElementXPath, { timeout: 5000 });
-            await page.waitForXPath(creatorNameElementXPath, { timeout: 5000 });
+            const titleElementXPath = `${path}/a`;
+            const linkElementXPath = `${path}/a`;
+            const creatorNameElementXPath = `${path}/div/div[1]/div/div[2]/div/div/button`;
+            const readingTimeElementXPath = `${path}/div/div[2]/div[2]/div[2]/small`;
 
             const titleElement = await page.$x(titleElementXPath);
+
             const title = await page.evaluate(
                 (el) => el?.innerText,
                 titleElement ? titleElement[0] : null
@@ -52,18 +52,14 @@ class Hackernoon {
                 creatorNameElement ? creatorNameElement[0] : null
             );
 
-            const thumbnailElement = await page.$x(thumbnailElementXPath);
-            const thumbnail = await page.evaluate(
-                (el) => {
-                    const backgroundImageStyle =
-                        getComputedStyle(el).backgroundImage;
-                    return backgroundImageStyle.match(/url\("([^"]+)"/)[1];
-                },
-                thumbnailElement ? thumbnailElement[0] : null
+            const readingTimeElement = await page.$x(readingTimeElementXPath);
+            const readingTime = await page.evaluate(
+                (el) => el?.innerText,
+                readingTimeElement ? readingTimeElement[0] : null
             );
 
-            let readingTime = '';
             let publicationDate = '';
+            let thumbnail = '';
             if (link) {
                 const response = await AxiosInstance.getUrlData(link);
                 const html = response.data;
@@ -71,20 +67,22 @@ class Hackernoon {
                 const extractWeb = new Web(link, html);
                 publicationDate = extractWeb.getPublicationDate();
 
-                const time = extractWeb.getReadingTime(true);
-                readingTime = time ? `${time} min Read` : '1 min Read';
+                const pageThumbnail = extractWeb.getThumbnail();
+                thumbnail = pageThumbnail ? pageThumbnail : '';
             }
 
+            const article = {
+                title,
+                link,
+                author: creatorName,
+                readingTime,
+                publicationDate: new Date(publicationDate),
+                thumbnail: thumbnail ? thumbnail : '',
+                source: 'DevTo',
+            };
+
             if (title && link && creatorName && readingTime) {
-                articles.push({
-                    title,
-                    link,
-                    author: creatorName,
-                    readingTime,
-                    publicationDate: new Date(publicationDate),
-                    thumbnail: thumbnail ? thumbnail : '',
-                    source: 'Hackernoon',
-                });
+                articles.push(article);
             }
         }
 
@@ -94,4 +92,4 @@ class Hackernoon {
     }
 }
 
-module.exports = Hackernoon;
+module.exports = DevTo;
