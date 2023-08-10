@@ -32,6 +32,8 @@ const constants = {
     DEFAULT_ICON_SIZE: '16x16',
     MEDIUM_BASE_URL: 'https://medium.com/',
     HACKERNOON_BASE_URL: 'https://hackernoon.com/techbeat?filter=trending',
+    DEVTO_BASE_URL: 'https://dev.to/top/week',
+    DEFAULT_ARTICLE_COUNT: 6,
 };
 
 module.exports = constants;

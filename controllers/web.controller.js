@@ -1,11 +1,11 @@
-const puppeteer = require('puppeteer');
-
 const ExtractWeb = require('../common/Web');
 const helpers = require('../common/helpers');
+const DevTo = require('../common/Blogs/DevTo');
 const AxiosInstance = require('../common/axios');
 const Medium = require('../common/Blogs/Medium');
 const constants = require('../common/constants');
 const Hackernoon = require('../common/Blogs/Hackernoon');
+const { initializeBrowser } = require('../common/browserInstance');
 
 /**
  * controller function for website/webpage extraction
@@ -52,7 +52,7 @@ class WebContoller {
                 return res.status(400).json({ message: 'Invalid URL' });
             }
 
-            const browser = await puppeteer.launch({ headless: 'new' });
+            const browser = initializeBrowser();
             const page = await browser.newPage();
 
             // Disable image loading
@@ -69,7 +69,7 @@ class WebContoller {
                     return { href: link.href, title: link.innerText };
                 })
             );
-            await browser.close();
+            await page.close();
 
             const links = helpers.categorizeLinks(
                 helpers.removeDuplicateLinks(allLinks),
@@ -93,7 +93,7 @@ class WebContoller {
                 return res.status(400).json({ message: 'Invalid URL' });
             }
 
-            const browser = await puppeteer.launch({ headless: 'new' });
+            const browser = initializeBrowser();
             const page = await browser.newPage();
 
             await page.goto(url);
@@ -101,7 +101,7 @@ class WebContoller {
             const imageUrls = await page.$$eval('img', (images) =>
                 images.map((img) => ({ src: img.src, alt: img.alt }))
             );
-            await browser.close();
+            await page.close();
 
             const images = [];
             for (let image of imageUrls) {
@@ -124,25 +124,38 @@ class WebContoller {
         }
     }
 
+    /**
+     * Gather trending articles from top tech blog sites like medium, dev.to, hackernoon
+     * @param {*} req
+     * @param {*} res
+     */
     static async gatherTrendingArticles(req, res) {
         try {
             const { articleCount } = req.params;
             const articles = [];
 
-            const medium = new Medium(constants.MEDIUM_BASE_URL);
             const hackernoon = new Hackernoon(constants.HACKERNOON_BASE_URL);
+            const medium = new Medium(constants.MEDIUM_BASE_URL);
+            const dev = new DevTo(constants.DEVTO_BASE_URL);
 
-            const [mediumArticles, hackernoonArticles] = await Promise.all([
-                medium.getTrendingArticles(articleCount),
-                hackernoon.getTrendingArticles(articleCount),
-            ]);
+            const [hackernoonArticles, mediumArticles, devToArticles] =
+                await Promise.all([
+                    hackernoon.getTrendingArticles(articleCount),
+                    medium.getTrendingArticles(articleCount),
+                    dev.getTrendingArticles(articleCount),
+                ]);
 
-            articles.push(...mediumArticles, ...hackernoonArticles);
+            articles.push(
+                ...hackernoonArticles,
+                ...mediumArticles,
+                ...devToArticles
+            );
 
             res.status(200).json({ total: articles.length, articles });
         } catch (error) {
             res.status(400).json({
                 message: error.message,
+                stack: error.stack,
             });
         }
     }

@@ -1,6 +1,7 @@
-const puppeteer = require('puppeteer');
 const Web = require('../Web');
 const AxiosInstance = require('../axios');
+const constants = require('../constants');
+const { initializeBrowser } = require('../browserInstance');
 
 class Medium {
     constructor(url) {
@@ -8,13 +9,10 @@ class Medium {
     }
 
     async getTrendingArticles(
-        count,
+        count = constants.DEFAULT_ARTICLE_COUNT,
         options = { headless: 'new', devtools: false, url: '', additional: 4 }
     ) {
-        const browser = await puppeteer.launch({
-            headless: options.headless,
-            devtools: options.devtools,
-        });
+        const browser = await initializeBrowser();
 
         const page = await browser.newPage();
 
@@ -23,10 +21,9 @@ class Medium {
 
         await page.waitForSelector('.pw-trending-post', { timeout: 5000 });
 
-        const articleCount = count ? count : 6;
         const articles = [];
 
-        for (let i = 1; i <= articleCount; i++) {
+        for (let i = 1; i <= count; i++) {
             const path = `/html/body/div/div/div[4]/div[1]/div/div/div/div[2]/div/div[${i}]/div/div/div[2]`;
 
             const titleElementXPath = `${path}/div[2]/a/div/h2`;
@@ -92,7 +89,7 @@ class Medium {
             });
         }
 
-        for (let i = 1; i <= articleCount + options.additional; i++) {
+        for (let i = 1; i <= count + options.additional; i++) {
             const path = `/html/body/div/div/div[4]/div[3]/div[1]/div/div/section/div/div/div[1]/div[${i}]/div/div`;
 
             const titleElementXPath = `${path}/div/a/h2`;
@@ -156,7 +153,7 @@ class Medium {
             }
         }
 
-        await browser.close();
+        await page.close();
 
         return articles;
     }
