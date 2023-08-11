@@ -145,6 +145,10 @@ class WebContoller {
                     dev.getTrendingArticles(articleCount),
                 ]);
 
+            console.log('hackenoon', hackernoonArticles.length);
+            console.log('medium', mediumArticles.length);
+            console.log('dev', devToArticles.length);
+
             articles.push(
                 ...hackernoonArticles,
                 ...mediumArticles,
