@@ -244,7 +244,7 @@ class Web {
             return publicationDate * 1000;
         }
 
-        const lastUpdatedDate = this.meta('last-updated');
+        const lastUpdatedDate = this.meta('last-updated', 'name');
         if (lastUpdatedDate) return lastUpdatedDate;
 
         return new Date();

@@ -24,11 +24,37 @@ class Hashnode {
         }
     }
 
+    /**
+     * Fetches additional data for the specified link.
+     * @param {string} link - The link to fetch data for.
+     * @returns {Promise<Object>} The fetched data including reading time and publication date.
+     */
+    async fetchLinkData(link) {
+        if (!link) {
+            return { thumbnail: '', publicationDate: '' };
+        }
+
+        const response = await AxiosInstance.getUrlData(link);
+        const html = response.data;
+        const extractWeb = new Web(link, html);
+
+        const [publicationDate, thumbnail] = await Promise.all([
+            extractWeb.getPublicationDate(),
+            extractWeb.getThumbnail(),
+        ]);
+
+        return {
+            thumbnail,
+            publicationDate,
+        };
+    }
+
     async getTrendingArticles(
         count = constants.DEFAULT_ARTICLE_COUNT,
         options = { headless: 'new', devtools: false, url: '', additional: 14 }
     ) {
         console.time('hashnode');
+        const { additional, url } = options;
         const browser = await initializeBrowser();
 
         const page = await browser.newPage();
@@ -38,12 +64,12 @@ class Hashnode {
             deviceScaleFactor: 1,
         });
 
-        const baseUrl = options.url ? options.url : this.url;
+        const baseUrl = url || this.url;
         await page.goto(baseUrl);
 
         const articles = [];
 
-        for (let i = 2; i <= count + options.additional; i++) {
+        for (let i = 2; i <= count + additional; i++) {
             const path = `/html/body/div[7]/div/div[2]/main/div[3]/div[${i}]`;
 
             const titleXPath = `${path}/a`;
@@ -58,18 +84,9 @@ class Hashnode {
                 this.getXPathElement(page, readingTimeXPath),
             ]);
 
-            let publicationDate = '';
-            let thumbnail = '';
-            if (link) {
-                const response = await AxiosInstance.getUrlData(link);
-                const html = response.data;
-
-                const extractWeb = new Web(link, html);
-                publicationDate = extractWeb.getPublicationDate();
-
-                const pageThumbnail = extractWeb.getThumbnail();
-                thumbnail = pageThumbnail ? pageThumbnail : '';
-            }
+            const { thumbnail, publicationDate } = await this.fetchLinkData(
+                link
+            );
 
             const article = {
                 title,
@@ -77,7 +94,7 @@ class Hashnode {
                 author,
                 readingTime,
                 publicationDate: new Date(publicationDate),
-                thumbnail: thumbnail ? thumbnail : '',
+                thumbnail: thumbnail || '',
                 source: 'Hashnode',
             };
 

@@ -3,11 +3,25 @@ const AxiosInstance = require('../axios');
 const constants = require('../constants');
 const { initializeBrowser } = require('../browserInstance');
 
+/**
+ * The `Hackernoon` class is used to scrape trending articles from the Hackernoon website.
+ */
 class Hackernoon {
+    /**
+     * Creates an instance of Hackernoon.
+     * @param {string} url - The URL of the Hackernoon website.
+     */
     constructor(url) {
         this.url = url;
     }
 
+    /**
+     * Retrieves the data of the specified XPath element on the page.
+     * @param {Page} page - The page object.
+     * @param {string} xPath - The XPath expression to locate the element.
+     * @param {string} [attribute='innerText'] - The attribute to extract from the element.
+     * @returns {Promise<string|null>} The extracted data or null if the element is not found.
+     */
     async getXPathElement(page, xPath, attribute = 'innerText') {
         const elementArray = await page.$x(xPath);
 
@@ -32,6 +46,37 @@ class Hackernoon {
         }
     }
 
+    /**
+     * Fetches additional data for the specified link.
+     * @param {string} link - The link to fetch data for.
+     * @returns {Promise<Object>} The fetched data including reading time and publication date.
+     */
+    async fetchLinkData(link) {
+        if (!link) {
+            return { readingTime: '', publicationDate: '' };
+        }
+
+        const response = await AxiosInstance.getUrlData(link);
+        const html = response.data;
+        const extractWeb = new Web(link, html);
+
+        const [publicationDate, readingTime] = await Promise.all([
+            extractWeb.getPublicationDate(),
+            extractWeb.getReadingTime(true),
+        ]);
+
+        return {
+            readingTime: readingTime ? `${readingTime} min Read` : '1 min Read',
+            publicationDate,
+        };
+    }
+
+    /**
+     * Retrieves the trending articles from the Hackernoon website.
+     * @param {number} [count=10] - The number of articles to retrieve.
+     * @param {Object} [options={ headless: 'new', devtools: false, url: '', additional: 14 }] - The options for retrieving articles.
+     * @returns {Promise<Array<Object>>} The array of trending articles.
+     */
     async getTrendingArticles(
         count = constants.DEFAULT_ARTICLE_COUNT,
         options = { headless: 'new', devtools: false, url: '', additional: 14 }
@@ -69,18 +114,9 @@ class Hackernoon {
                 this.getXPathElement(page, thumbnailXPath, 'backgroundImage'),
             ]);
 
-            let readingTime = '';
-            let publicationDate = '';
-            if (link) {
-                const response = await AxiosInstance.getUrlData(link);
-                const html = response.data;
-
-                const extractWeb = new Web(link, html);
-                publicationDate = extractWeb.getPublicationDate();
-
-                const time = extractWeb.getReadingTime(true);
-                readingTime = time ? `${time} min Read` : '1 min Read';
-            }
+            const { publicationDate, readingTime } = await this.fetchLinkData(
+                link
+            );
 
             const article = {
                 title,
