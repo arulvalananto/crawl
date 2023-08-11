@@ -8,10 +8,27 @@ class Medium {
         this.url = url;
     }
 
+    async getXPathElement(page, xPath, attribute = 'innerText') {
+        const elementArray = await page.$x(xPath);
+
+        if (elementArray.length > 0) {
+            const element = elementArray[0];
+            const data = await page.evaluate(
+                (el, attribute) => el[attribute],
+                element,
+                attribute
+            );
+            return data;
+        } else {
+            return null;
+        }
+    }
+
     async getTrendingArticles(
         count = constants.DEFAULT_ARTICLE_COUNT,
         options = { headless: 'new', devtools: false, url: '', additional: 4 }
     ) {
+        console.time('medium');
         const browser = await initializeBrowser();
 
         const page = await browser.newPage();
@@ -26,47 +43,21 @@ class Medium {
         for (let i = 1; i <= count; i++) {
             const path = `/html/body/div/div/div[4]/div[1]/div/div/div/div[2]/div/div[${i}]/div/div/div[2]`;
 
-            const titleElementXPath = `${path}/div[2]/a/div/h2`;
-            const linkElementXPath = `${path}/div[2]/a`;
-            const creatorNameElementXPath = `${path}/div[1]/div/div/div/div/div/div/a/h4`;
-            const readingTimeElementXPath = `${path}/span/div/span[2]`;
-            const dateElementXPath = `${path}/span/div/span[1]`;
+            const titleXPath = `${path}/div[2]/a/div/h2`;
+            const linkXPath = `${path}/div[2]/a`;
+            const authorXPath = `${path}/div[1]/div/div/div/div/div/div/a/h4`;
+            const readingTimeXPath = `${path}/span/div/span[2]`;
+            const dateXPath = `${path}/span/div/span[1]`;
 
-            await page.waitForXPath(titleElementXPath, { timeout: 5000 });
-            await page.waitForXPath(linkElementXPath, { timeout: 5000 });
-            await page.waitForXPath(creatorNameElementXPath, { timeout: 5000 });
-            await page.waitForXPath(readingTimeElementXPath, { timeout: 5000 });
-            await page.waitForXPath(dateElementXPath, { timeout: 5000 });
-
-            const titleElement = await page.$x(titleElementXPath);
-            const title = await page.evaluate(
-                (el) => el?.innerText,
-                titleElement ? titleElement[0] : null
-            );
-
-            const linkElement = await page.$x(linkElementXPath);
-            const link = await page.evaluate((el) => el?.href, linkElement[0]);
-
-            const creatorNameElement = await page.$x(creatorNameElementXPath);
-            const creatorName = await page.evaluate(
-                (el) => el?.innerText,
-                creatorNameElement ? creatorNameElement[0] : null
-            );
-
-            const readingTimeElement = await page.$x(readingTimeElementXPath);
-            const readingTime = await page.evaluate(
-                (el) => el?.innerText,
-                readingTimeElement ? readingTimeElement[0] : null
-            );
-
-            const dateElement = await page.$x(dateElementXPath);
-            const date = await page.evaluate(
-                (el) => el?.innerText,
-                dateElement ? dateElement[0] : null
-            );
+            const [title, link, author, readingTime, date] = await Promise.all([
+                this.getXPathElement(page, titleXPath),
+                this.getXPathElement(page, linkXPath, 'href'),
+                this.getXPathElement(page, authorXPath),
+                this.getXPathElement(page, readingTimeXPath),
+                this.getXPathElement(page, dateXPath),
+            ]);
 
             let thumbnail = '';
-
             if (link) {
                 const response = await AxiosInstance.getUrlData(link);
                 const html = response.data;
@@ -76,84 +67,61 @@ class Medium {
                 thumbnail = pageThumbnail ? pageThumbnail : '';
             }
 
-            articles.push({
+            const article = {
                 title,
                 link,
-                author: creatorName,
+                author,
                 readingTime,
                 publicationDate: new Date(
                     `${date}, ${new Date().getFullYear()}`
                 ),
                 thumbnail,
                 source: 'Medium',
-            });
+            };
+
+            if (title && link && author && readingTime && date) {
+                articles.push(article);
+            }
         }
 
         for (let i = 1; i <= count + options.additional; i++) {
             const path = `/html/body/div/div/div[4]/div[3]/div[1]/div/div/section/div/div/div[1]/div[${i}]/div/div`;
 
-            const titleElementXPath = `${path}/div/a/h2`;
-            const linkElementXPath = `${path}/div/a`;
-            const creatorNameElementXPath = `${path}/div/div[1]/div/div/div[1]/div/div/div/a/h4`;
-            const readingTimeElementXPath = `${path}/div/div[2]/div[1]/span[2]/span`;
-            const dateElementXPath = `${path}/div/div[2]/div[1]/span[1]/span/span`;
-            const thumbnailElementXPath = `${path}/a/img`;
+            const titleXPath = `${path}/div/a/h2`;
+            const linkXPath = `${path}/div/a`;
+            const authorXPath = `${path}/div/div[1]/div/div/div[1]/div/div/div/a/h4`;
+            const readingTimeXPath = `${path}/div/div[2]/div[1]/span[2]/span`;
+            const dateXPath = `${path}/div/div[2]/div[1]/span[1]/span/span`;
+            const thumbnailXPath = `${path}/a/img`;
 
-            await page.waitForXPath(titleElementXPath, { timeout: 5000 });
-            await page.waitForXPath(linkElementXPath, { timeout: 5000 });
-            await page.waitForXPath(creatorNameElementXPath, { timeout: 5000 });
-            await page.waitForXPath(readingTimeElementXPath, { timeout: 5000 });
-            await page.waitForXPath(dateElementXPath, { timeout: 5000 });
+            const [title, link, author, readingTime, date, thumbnail] =
+                await Promise.all([
+                    this.getXPathElement(page, titleXPath),
+                    this.getXPathElement(page, linkXPath, 'href'),
+                    this.getXPathElement(page, authorXPath),
+                    this.getXPathElement(page, readingTimeXPath),
+                    this.getXPathElement(page, dateXPath),
+                    this.getXPathElement(page, thumbnailXPath, 'src'),
+                ]);
 
-            const titleElement = await page.$x(titleElementXPath);
-            const title = await page.evaluate(
-                (el) => el?.innerText,
-                titleElement ? titleElement[0] : null
-            );
-
-            const linkElement = await page.$x(linkElementXPath);
-            const link = await page.evaluate((el) => el?.href, linkElement[0]);
-
-            const creatorNameElement = await page.$x(creatorNameElementXPath);
-            const creatorName = await page.evaluate(
-                (el) => el?.innerText,
-                creatorNameElement ? creatorNameElement[0] : null
-            );
-
-            const readingTimeElement = await page.$x(readingTimeElementXPath);
-            const readingTime = await page.evaluate(
-                (el) => el?.innerText,
-                readingTimeElement ? readingTimeElement[0] : null
-            );
-
-            const dateElement = await page.$x(dateElementXPath);
-            const date = await page.evaluate(
-                (el) => el?.innerText,
-                dateElement ? dateElement[0] : null
-            );
-
-            const thumbnailElement = await page.$x(thumbnailElementXPath);
-            const thumbnail = await page.evaluate(
-                (el) => el?.src,
-                thumbnailElement ? thumbnailElement[0] : null
-            );
-
-            if (title && link && creatorName && readingTime && date) {
-                articles.push({
-                    title,
-                    link,
-                    author: creatorName,
-                    readingTime,
-                    publicationDate: new Date(
-                        `${date}, ${new Date().getFullYear()}`
-                    ),
-                    thumbnail: thumbnail ? thumbnail : '',
-                    source: 'Medium',
-                });
+            const article = {
+                title,
+                link,
+                author,
+                readingTime,
+                publicationDate: new Date(
+                    `${date}, ${new Date().getFullYear()}`
+                ),
+                thumbnail: thumbnail ? thumbnail : '',
+                source: 'Medium',
+            };
+            if (title && link && author && readingTime && date) {
+                articles.push(article);
             }
         }
 
         await page.close();
+        console.timeEnd('medium');
 
         return articles;
     }
