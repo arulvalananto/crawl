@@ -87,7 +87,6 @@ class DevTo {
             const { publicationDate, thumbnail } = await this.fetchLinkData(
                 link
             );
-            console.log(publicationDate);
 
             const article = {
                 title,
